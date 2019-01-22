@@ -4,17 +4,18 @@ import java.io.Serializable;
 
 public class Contato implements Serializable {
 
-    private long id;
+    private int id;
     private String nome;
     private String telefone;
     private String email;
     private String imagem;
+    private int excluido = 0;
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -50,8 +51,15 @@ public class Contato implements Serializable {
         this.imagem = imagem;
     }
 
-    @Override
-    public String toString() {
-        return nome + " - " + email;
+    public int getExcluido() {
+        return excluido;
+    }
+
+    public void setExcluido(int excluido) {
+        this.excluido = excluido;
+    }
+
+    public void exclui() {
+        this.excluido = 1;
     }
 }

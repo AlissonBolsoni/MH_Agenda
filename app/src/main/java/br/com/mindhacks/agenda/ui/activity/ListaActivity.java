@@ -6,40 +6,40 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.view.ContextMenu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import br.com.mindhacks.agenda.R;
+import br.com.mindhacks.agenda.dao.ContatoDao;
 import br.com.mindhacks.agenda.objetos.Contato;
+import br.com.mindhacks.agenda.ui.adapter.ListaAdapter;
 
 public class ListaActivity extends AppCompatActivity {
 
-    private FloatingActionButton listaAdd;
     private ListView listaListView;
-    private HashMap<Long, Contato> contatos;
+    private ArrayList<Contato> contatos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         setTitle(R.string.lista_contatos);
 
-        contatos = new HashMap<Long, Contato>();
-
-        listaAdd = (FloatingActionButton) findViewById(R.id.lista_fab);
+        FloatingActionButton listaAdd = (FloatingActionButton) findViewById(R.id.lista_fab);
         listaListView = (ListView) findViewById(R.id.lista_listview);
+        registerForContextMenu(listaListView);
 
         listaAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ListaActivity.this, FormularioActivity.class);
-                startActivityForResult(intent, FormularioActivity.REQUEST_CODE_FORMULARIO);
+                Intent intent = new Intent(ListaActivity.this, CadastraActivity.class);
+                startActivityForResult(intent, CadastraActivity.REQUEST_CODE_FORMULARIO);
             }
         });
 
@@ -48,17 +48,20 @@ public class ListaActivity extends AppCompatActivity {
         listaListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Contato contato = (Contato) contatos.values().toArray()[position];
+                Contato contato = (Contato) contatos.get(position);
 
-                Intent intent = new Intent(ListaActivity.this, FormularioActivity.class);
-                intent.putExtra(FormularioActivity.CONTATO, contato);
-                startActivityForResult(intent, FormularioActivity.REQUEST_CODE_FORMULARIO);
+                Intent intent = new Intent(ListaActivity.this, CadastraActivity.class);
+                intent.putExtra(CadastraActivity.CONTATO, contato);
+                startActivityForResult(intent, CadastraActivity.REQUEST_CODE_FORMULARIO);
             }
         });
     }
 
     private void criaAdapter() {
-        ArrayAdapter adapter = new ArrayAdapter<Contato>(this, android.R.layout.simple_expandable_list_item_1, new ArrayList<Contato>(contatos.values()));
+        ContatoDao dao = new ContatoDao(this);
+        contatos = dao.pegaTodosContatos();
+        dao.close();
+        ListAdapter adapter = new ListaAdapter(contatos, this);
         listaListView.setAdapter(adapter);
     }
 
@@ -66,15 +69,28 @@ public class ListaActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (data != null) {
-            if (requestCode == FormularioActivity.REQUEST_CODE_FORMULARIO && resultCode == Activity.RESULT_OK) {
-                Contato contato = (Contato) data.getSerializableExtra(FormularioActivity.CONTATO);
-                if (contato.getId() == 0)
-                    contato.setId(contatos.values().size() + 1);
-
-                contatos.put(contato.getId(), contato);
-                criaAdapter();
-            }
+        if (requestCode == CadastraActivity.REQUEST_CODE_FORMULARIO && resultCode == Activity.RESULT_OK) {
+            criaAdapter();
         }
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+        final Contato contato = (Contato) listaListView.getItemAtPosition(info.position);
+
+        MenuItem del = menu.add("Apagar");
+        del.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                ContatoDao dao = new ContatoDao(ListaActivity.this);
+                dao.remove(contato);
+                dao.close();
+                criaAdapter();
+
+                return false;
+            }
+        });
+
     }
 }
