@@ -7,11 +7,12 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 import br.com.mindhacks.agenda.R;
 import br.com.mindhacks.agenda.objetos.Contato;
@@ -20,7 +21,7 @@ public class ListaActivity extends AppCompatActivity {
 
     private FloatingActionButton listaAdd;
     private ListView listaListView;
-    private List<Contato> contatoes;
+    private HashMap<Long, Contato> contatos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +30,7 @@ public class ListaActivity extends AppCompatActivity {
 
         setTitle(R.string.lista_contatos);
 
-        contatoes = new ArrayList<Contato>();
+        contatos = new HashMap<Long, Contato>();
 
         listaAdd = (FloatingActionButton) findViewById(R.id.lista_fab);
         listaListView = (ListView) findViewById(R.id.lista_listview);
@@ -42,7 +43,22 @@ public class ListaActivity extends AppCompatActivity {
             }
         });
 
-        ArrayAdapter adapter = new ArrayAdapter<Contato>(this, android.R.layout.simple_expandable_list_item_1, contatoes);
+        criaAdapter();
+
+        listaListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Contato contato = (Contato) contatos.values().toArray()[position];
+
+                Intent intent = new Intent(ListaActivity.this, FormularioActivity.class);
+                intent.putExtra(FormularioActivity.CONTATO, contato);
+                startActivityForResult(intent, FormularioActivity.REQUEST_CODE_FORMULARIO);
+            }
+        });
+    }
+
+    private void criaAdapter() {
+        ArrayAdapter adapter = new ArrayAdapter<Contato>(this, android.R.layout.simple_expandable_list_item_1, new ArrayList<Contato>(contatos.values()));
         listaListView.setAdapter(adapter);
     }
 
@@ -50,12 +66,15 @@ public class ListaActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (data != null){
-            if (requestCode == FormularioActivity.REQUEST_CODE_FORMULARIO && resultCode == Activity.RESULT_OK){
-                contatoes.add((Contato) data.getSerializableExtra(FormularioActivity.CONTATO));
+        if (data != null) {
+            if (requestCode == FormularioActivity.REQUEST_CODE_FORMULARIO && resultCode == Activity.RESULT_OK) {
+                Contato contato = (Contato) data.getSerializableExtra(FormularioActivity.CONTATO);
+                if (contato.getId() == 0)
+                    contato.setId(contatos.values().size() + 1);
+
+                contatos.put(contato.getId(), contato);
+                criaAdapter();
             }
         }
-
-
     }
 }
