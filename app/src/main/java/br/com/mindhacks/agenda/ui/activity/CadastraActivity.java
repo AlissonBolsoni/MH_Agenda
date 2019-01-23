@@ -2,7 +2,6 @@ package br.com.mindhacks.agenda.ui.activity;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.print.PrinterId;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -15,9 +14,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 
-import com.github.rtoshiro.util.format.SimpleMaskFormatter;
-import com.github.rtoshiro.util.format.text.MaskTextWatcher;
-
 import java.io.File;
 
 import br.com.mindhacks.agenda.BuildConfig;
@@ -25,6 +21,7 @@ import br.com.mindhacks.agenda.R;
 import br.com.mindhacks.agenda.dao.ContatoDao;
 import br.com.mindhacks.agenda.objetos.Contato;
 import br.com.mindhacks.agenda.utils.ImageUtils;
+import br.com.mindhacks.agenda.utils.MascarasUtils;
 
 public class CadastraActivity extends AppCompatActivity {
 
@@ -67,9 +64,7 @@ public class CadastraActivity extends AppCompatActivity {
             preencheFormulario();
         }
 
-        SimpleMaskFormatter telefomeMask = new SimpleMaskFormatter("(NN) NNNNN-NNNN");
-        MaskTextWatcher telefoneWatcher = new MaskTextWatcher(editTextTelefone, telefomeMask);
-        editTextTelefone.addTextChangedListener(telefoneWatcher);
+        MascarasUtils.colocaMascara(editTextTelefone, "(NN) NNNNN-NNNN");
     }
 
     private void chamaCamera() {
