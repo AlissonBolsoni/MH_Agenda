@@ -13,8 +13,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.File;
+import java.util.regex.Pattern;
 
 import br.com.mindhacks.agenda.BuildConfig;
 import br.com.mindhacks.agenda.R;
@@ -26,23 +28,24 @@ import br.com.mindhacks.agenda.utils.MascarasUtils;
 public class CadastraActivity extends AppCompatActivity {
 
     public static final int REQUEST_CODE_FORMULARIO = 485;
-    public static final String CONTATO = "contato";
-    private static final String CRIAR_CONTATO = "Criar Contato";
     private static final int CAMERA_RESULT = 637;
+    private static final String CONTATO_SALVO = "ContatoSalvo";
+    private static final String REGEX_EMAIL = "^(\\w)*@((\\w)+)(\\.)(\\w{3})(\\.)?(\\w{2})?";
+    public static final String CONTATO = "contato";
+
 
     private EditText editTextNome;
     private EditText editTextEmail;
     private EditText editTextTelefone;
     private ImageView imageViewImagem;
-    private Contato contato = null;
-    private String caminhoImagem;
+    private Contato contato = new Contato();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_formulario);
 
-        setTitle(CRIAR_CONTATO);
+        setTitle(R.string.criar_contato);
 
         FloatingActionButton fabCamera = (FloatingActionButton) findViewById(R.id.formulario_fab_camera);
         imageViewImagem = (ImageView) findViewById(R.id.formulario_imagem);
@@ -67,9 +70,25 @@ public class CadastraActivity extends AppCompatActivity {
         MascarasUtils.colocaMascara(editTextTelefone, "(NN) NNNNN-NNNN");
     }
 
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        this.contato = (Contato) savedInstanceState.getSerializable(CONTATO_SALVO);
+        preencheFormulario();
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putSerializable(CONTATO_SALVO, contato);
+
+        super.onSaveInstanceState(outState);
+    }
+
+
     private void chamaCamera() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        caminhoImagem = getExternalFilesDir(null) + "/" + System.currentTimeMillis() + ".jpg";
+        String caminhoImagem = getExternalFilesDir(null) + "/" + System.currentTimeMillis() + ".jpg";
+        this.contato.setImagem(caminhoImagem);
         File arquivoFoto = new File(caminhoImagem);
 
         intent.putExtra(
@@ -86,7 +105,7 @@ public class CadastraActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (requestCode == CAMERA_RESULT && resultCode == Activity.RESULT_OK) {
-            ImageUtils.setImage(imageViewImagem, caminhoImagem);
+            ImageUtils.setImage(imageViewImagem, this.contato.getImagem());
         }
     }
 
@@ -94,8 +113,7 @@ public class CadastraActivity extends AppCompatActivity {
         editTextNome.setText(this.contato.getNome());
         editTextEmail.setText(this.contato.getEmail());
         editTextTelefone.setText(this.contato.getTelefone());
-        caminhoImagem = this.contato.getImagem();
-        ImageUtils.setImage(imageViewImagem, caminhoImagem);
+        ImageUtils.setImage(imageViewImagem, this.contato.getImagem());
     }
 
     @Override
@@ -121,14 +139,14 @@ public class CadastraActivity extends AppCompatActivity {
     }
 
     private void salvarContato() {
-        if (contato == null) {
-            contato = new Contato();
-        }
         contato.setNome(editTextNome.getText().toString());
         contato.setEmail(editTextEmail.getText().toString());
         contato.setTelefone(editTextTelefone.getText().toString());
-        contato.setImagem(caminhoImagem);
-        retornaContato();
+
+        if (contato.getEmail().matches(REGEX_EMAIL))
+            retornaContato();
+        else
+            Toast.makeText(this, "Email inválido", Toast.LENGTH_SHORT).show();
     }
 
     private void retornaContato() {
@@ -142,7 +160,7 @@ public class CadastraActivity extends AppCompatActivity {
 
             dao.close();
             setResult(Activity.RESULT_OK);
-        }catch (Exception e){
+        } catch (Exception e) {
             setResult(Activity.RESULT_CANCELED);
         }
 

@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Agenda</string>
     <string name="lista_contatos">Lista de Contatos</string>
+    <string name="criar_contato">Criar Contato</string>
 </resources>
